@@ -3,6 +3,10 @@
 #include "Layer.hpp"
 
 class Network {
+	private:
+		double calculateError(std::vector<std::vector<double>>& inputs, std::vector<std::vector<double>>& expected_outputs);
+		void applyAllGradients(double learnRate);
+		void randomizeWeights();
 	public:
 		std::vector<Layer> layers;
 
@@ -14,5 +18,14 @@ class Network {
 			}
 		}
 
-		std::vector<double> evaluate(std::vector<double> inputs);
+		std::vector<double> evaluate(std::vector<double>& inputs);
+		std::vector<std::vector<double>> evaluateInputs(std::vector<std::vector<double>>& input); 
+		
+		void train(
+			std::vector<std::vector<double>>& x_train,
+			std::vector<std::vector<double>>& y_train,
+			double learn_rate,
+			int cycles
+		);
+
 };

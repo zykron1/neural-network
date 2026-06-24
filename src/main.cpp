@@ -10,28 +10,21 @@ int main() {
     Data d(-10.0, 10.0);
     d.generateData();
 
+	std::vector<std::vector<double>> x_train;
+	std::vector<std::vector<double>> y_train;
+
+	for (size_t i = 0; i < d.x_blue.size(); i++) {
+		x_train.push_back({d.x_blue[i], d.y_blue[i]});
+		y_train.push_back({0.0, 1.0});
+	}
+
+	for (size_t i = 0; i < d.x_red.size(); i++) {
+		x_train.push_back({d.x_red[i], d.y_red[i]});
+		y_train.push_back({1.0, 0.0});
+	}
+
 	Network n({2,3,2});
-
-	Layer& l0 = n.layers[0]; // 2 -> 3
-	l0.weights[0*3+0] = 1.0;
-	l0.weights[0*3+1] = -1.0;
-	l0.weights[0*3+2] = 0.5;
-	l0.weights[1*3+0] = 1.0;
-	l0.weights[1*3+1] = -1.0;
-	l0.weights[1*3+2] = -0.5;
-	l0.biases[0] = 0.0;
-	l0.biases[1] = 0.0;
-	l0.biases[2] = 0.0;
-
-	Layer& l1 = n.layers[1]; // 3 -> 2
-	l1.weights[0*2+0] = 1.0;
-	l1.weights[0*2+1] = -1.0;
-	l1.weights[1*2+0] = -1.0;
-	l1.weights[1*2+1] = 1.0;
-	l1.weights[2*2+0] = 0.5;
-	l1.weights[2*2+1] = -0.5;
-	l1.biases[0] = 0.0;
-	l1.biases[1] = 0.0;
+	n.train(x_train, y_train, 0.01, 100);
 
 	std::vector<double> x_red, y_red;
 	std::vector<double> x_blue, y_blue;

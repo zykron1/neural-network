@@ -20,3 +20,17 @@ std::vector<double> Layer::calculateOutputs(std::vector<double>& inputs) {
 double& Layer::weight(std::size_t in_node, std::size_t out_node) {
 	return weights[in_node * nodes_out + out_node];
 }
+
+double& Layer::weightGradient(std::size_t in_node, std::size_t out_node) {
+	return this->weightGradients[in_node * nodes_out + out_node];
+}
+
+void Layer::applyGradients(double learnRate) {
+	for (int nodeOut = 0; nodeOut < this->nodes_out; nodeOut++) {
+		biases[nodeOut] -= this->biasGradients[nodeOut] * learnRate;
+		for (int nodeIn = 0; nodeIn < this->nodes_in; nodeIn++) {
+			this->weight(nodeIn, nodeOut) -= this->weightGradient(nodeIn, nodeOut) * learnRate;
+		}
+
+	}
+}
