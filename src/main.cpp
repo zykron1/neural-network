@@ -1,61 +1,102 @@
 #include "dataset/Data.hpp"
+#include "dataset/MNISTLoader.hpp"
 #include "matplotlibcpp.h"
 #include "dataset/Data.hpp"
 #include "neural/Layer.hpp"
 #include "neural/Network.hpp"
+#include <iostream>
 
 namespace plt = matplotlibcpp;
 
-int main() {
-    Data d(-10.0, 10.0);
-    d.generateData();
+int argmax(std::vector<double>& output) {
+	int bestIndex = 0;
+	double bestValue = output[0];
+	for (int i = 1; i < (int)output.size(); i++) {
+		if (output[i] > bestValue) {
+			bestValue = output[i];
+			bestIndex = i;
+		}
+	}
+	return bestIndex;
+}
 
-	std::vector<std::vector<double>> x_train;
+
+void show_digit_no_block(const std::vector<double>& flat, double predicted, double expected) {
+    const int H = 28;
+    const int W = 28;
+
+    static std::vector<float> img(H * W);
+
+    for (int i = 0; i < H * W; i++) {
+        img[i] = static_cast<float>(flat[i]);
+    }
+
+    plt::clf();  // clear figure
+
+    plt::imshow(
+        img.data(),
+        H,
+        W,
+        1,
+        {{"cmap", "jet"}, {"interpolation", "nearest"}}
+    );
+
+    plt::title(
+			"Pred: " + std::to_string((int)predicted) +
+			" | Expected: " + std::to_string((int)expected),
+			{{"fontsize", "32"}}
+			);
+
+    plt::axis("off");
+}
+
+int main() {
+	MNISTLoader mn("test.csv");
+
+	// Import mnist
+	auto [x_train, labels] = mn.load();
 	std::vector<std::vector<double>> y_train;
 
-	for (size_t i = 0; i < d.x_blue.size(); i++) {
-		x_train.push_back({d.x_blue[i], d.y_blue[i]});
-		y_train.push_back({0.0, 1.0});
+	// convert label to network output
+	for (auto& label : labels) {
+		std::vector<double> l(10);
+		l[label] = 1.0;
+		y_train.push_back(l);
 	}
 
-	for (size_t i = 0; i < d.x_red.size(); i++) {
-		x_train.push_back({d.x_red[i], d.y_red[i]});
-		y_train.push_back({1.0, 0.0});
+	/*
+	std::vector<int> layers = {784, 64, 32, 10};
+	Network n(layers);
+	n.train(x_train, y_train, 0.1, 5, 32);
+	n.save("mnist.model");
+	*/
+	
+	Network n = Network::load("mnist.model");
+
+	int success = 0;
+	for (size_t i = 0; i < x_train.size(); ++i) {
+		auto input = x_train[i];
+		auto output = labels[i];
+
+		auto predicted_output = n.evaluate(input);
+		
+		if (argmax(predicted_output) == output) {
+			success++;
+		}
 	}
 
-	Network n({2,3,2});
-	n.train(x_train, y_train, 0.01, 100);
+	std::cout << "Accuracy: " << success << " / " << x_train.size() << std::endl;
 
-	std::vector<double> x_red, y_red;
-	std::vector<double> x_blue, y_blue;
+	plt::figure_size(300, 300);
 
-    for (double x = -10; x <= 10; x += 0.2) {
-        for (double y = -10; y <= 10; y += 0.2) {
+	for (int i = 0; i < 100; i++) {
+		auto input = x_train[i];
+		auto output = labels[i];
 
-            std::vector<double> input = {x, y};
-            std::vector<double> out = n.evaluate(input);
+		auto predicted_output = n.evaluate(input);
 
-            if (out[0] > out[1]) {
-                x_red.push_back(x);
-                y_red.push_back(y);
-            } else {
-                x_blue.push_back(x);
-                y_blue.push_back(y);
-            }
-        }
-    }
-	plt::figure();
+		show_digit_no_block(input, argmax(predicted_output), output);
 
-	plt::plot(x_blue, y_blue, "b.");
-	plt::plot(x_red, y_red, "r.");
-
-	plt::plot(d.x_blue, d.y_blue, "bo");
-	plt::plot(d.x_red, d.y_red, "ro");
-
-	plt::title("Neural Network");
-	plt::xlabel("x");
-	plt::ylabel("y");
-
-	plt::show();
-
+		plt::pause(0.5);  // key: lets GUI update without blocking
+	}
 }
